@@ -4,6 +4,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NavigationCommand = System.Func<Position, Position>;
+using CommonHelpers;
 
 async IAsyncEnumerable<string> ReadDataAsync(string path)
 {
@@ -30,17 +31,12 @@ async IAsyncEnumerable<NavigationCommand> ParseCommands(IAsyncEnumerable<string>
     }
 }
 
-static int SafeParseInt(string s)
-{
-    return int.TryParse(s, out var i) ? i : 0;
-}
-
 static BasicCommand? ParseBasicCommand(string command)
 {
     var parseCommandRegex = new Regex("(?<direction>\\w+?) (?<amount>\\d+?)");
     var match = parseCommandRegex.Match(command);
     return match.Success 
-        ? new BasicCommand(match.Groups["direction"].Value, SafeParseInt(match.Groups["amount"].Value))
+        ? new BasicCommand(match.Groups["direction"].Value, Helpers.SafeParseInt(match.Groups["amount"].Value))
         : null;
 }
 

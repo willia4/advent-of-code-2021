@@ -94,15 +94,16 @@ async Task Part1(string path)
     var gamma = MakePart1Number(bitLength, reversedZeros, reversedOnes, (zeroCount, oneCount) => oneCount > zeroCount ? (byte) 1 : (byte) 0);
     var epsilon = MakePart1Number(bitLength, reversedZeros, reversedOnes, (zeroCount, oneCount) => oneCount > zeroCount ? (byte) 0 : (byte) 1);
     
-    Console.WriteLine("");
-    Console.WriteLine( "│ ");
-    Console.WriteLine( "│ Part 1: ");
-    Console.WriteLine($"│ Bit Length: {bitLength}");
-    Console.WriteLine($"│ Gamma: {gamma}");
-    Console.WriteLine($"│ Epsilon: {epsilon}");
-    Console.WriteLine($"│ ");
-    Console.WriteLine($"│ Power (gamma * epsilon): {gamma * epsilon}");
-    Console.WriteLine($"└────");
+    Console.WriteLine( "");
+    Console.WriteLine( " │ ");
+    Console.WriteLine( " │ Part 1: ");
+    Console.WriteLine($" │ {path}");
+    Console.WriteLine($" │ Bit Length: {bitLength}");
+    Console.WriteLine($" │ Gamma: {gamma}");
+    Console.WriteLine($" │ Epsilon: {epsilon}");
+    Console.WriteLine($" │ ");
+    Console.WriteLine($" │ Power (gamma * epsilon): {gamma * epsilon}");
+    Console.WriteLine($" └────");
     
 }
 
@@ -117,14 +118,15 @@ async Task Part2(string path)
     var co2 = MakePart2Number(bitLength, reversedInput, (zerosCount, onesCount) => zerosCount > onesCount ? 1 : 0);
     
     Console.WriteLine("");
-    Console.WriteLine( "│ ");
-    Console.WriteLine( "│ Part 2: ");
-    Console.WriteLine($"│ Bit Length: {bitLength}");
-    Console.WriteLine($"│ O2 Generator: {o2}");
-    Console.WriteLine($"│ CO2 Scrubber: {co2}");
-    Console.WriteLine($"│ ");
-    Console.WriteLine($"│ Life Support (O2 * CO2): {o2 * co2}");
-    Console.WriteLine($"└────");
+    Console.WriteLine( " │ ");
+    Console.WriteLine( " │ Part 2: ");
+    Console.WriteLine($" │ {path}");
+    Console.WriteLine($" │ Bit Length: {bitLength}");
+    Console.WriteLine($" │ O2 Generator: {o2}");
+    Console.WriteLine($" │ CO2 Scrubber: {co2}");
+    Console.WriteLine($" │ ");
+    Console.WriteLine($" │ Life Support (O2 * CO2): {o2 * co2}");
+    Console.WriteLine($" └────");
 }
 
 Console.WriteLine("Test Input: ");
