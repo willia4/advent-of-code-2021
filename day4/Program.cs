@@ -62,7 +62,7 @@ async Task Part1(string path)
     Console.WriteLine($" │ Earliest winning call: { earliestWin.WinningCalls.Last() }");
     Console.WriteLine($" │ Winning calls: { string.Join(", ", earliestWin.WinningCalls) }");
     Console.WriteLine( " │ Winning board: ");
-    var winningBoardLines = earliestWin.Board.ToString().Split("\n");
+    var winningBoardLines = earliestWin.Board.ToString().Lines();
     foreach (var w in winningBoardLines)
     {
         Console.WriteLine($" │    {w}");
@@ -113,7 +113,7 @@ async Task Part2(string path)
     Console.WriteLine($" │ Latest winning call: {latestWin.WinningCalls.Last()}");
     Console.WriteLine($" | Calls to win: {string.Join(", ", latestWin.WinningCalls)}");
     Console.WriteLine( " │ Latest winning board: ");
-    var latestWinningBoardLines = latestWin.Board.ToString().Split("\n");
+    var latestWinningBoardLines = latestWin.Board.ToString().Lines();
     foreach (var w in latestWinningBoardLines)
     {
         Console.WriteLine($" │    {w}");

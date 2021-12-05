@@ -21,9 +21,11 @@ namespace CommonHelpers
             return matrix.Select(row => row.Select(transform));
         }
 
-        public static string MatrixToString<T>(this IEnumerable<IEnumerable<T>> matrix)
+        public static string MatrixToString<T>(this IEnumerable<IEnumerable<T>> matrix, string spacer = "  ", Func<T, string>? customToString = null)
         {
-            var stringMatrix = matrix.SelectMatrix((o) => o?.ToString() ?? "<null>");
+            var stringMatrix = matrix.SelectMatrix((o) => customToString != null 
+                                                                                ? customToString(o)
+                                                                                : o?.ToString() ?? "<null>");
             var stringLengths = stringMatrix.SelectMatrix(s => s.Length);
 
             var maxLength = stringLengths.Select(row => row.Max()).Max();
@@ -36,7 +38,7 @@ namespace CommonHelpers
                 foreach (var item in row)
                 {
                     sb.Append(space);
-                    space = "  ";
+                    space = spacer;
 
                     sb.Append(item.PadLeft(maxLength));
                 }
