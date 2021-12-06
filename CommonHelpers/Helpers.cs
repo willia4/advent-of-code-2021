@@ -18,5 +18,32 @@ namespace CommonHelpers
         {
             return values.Length == 0 ? 0 : values.Max();
         }
+
+        public static string Trim(string s)
+        {
+            return s.Trim();
+        }
+
+        public static bool NotEmpty(string s)
+        {
+            return !string.IsNullOrWhiteSpace(s);
+        }
+
+        // for any keys in a dictionary, reset the values for those keys to their default value. Does not remove any keys. 
+        public static void ClearDictionaryValuesInPlace<K, V>(Dictionary<K, V> dictionary, V defaultValue = default)
+        {
+            foreach (var k in dictionary.Keys)
+            {
+                dictionary[k] = defaultValue;
+            }
+        }
+
+        public static void ReplaceDictionaryKeys<K, V>(Dictionary<K, V> target, Dictionary<K, V> source)
+        {
+            foreach (var k in source.Keys)
+            {
+                target[k] = source[k];
+            }
+        }
     }
 }

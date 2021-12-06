@@ -6,6 +6,12 @@ namespace CommonHelpers
 {
     public static class IEnumerableExtensions
     {
+        public static UInt64 Sum(this IEnumerable<UInt64> source)
+        {
+            return source.Aggregate((UInt64)0, (acc, v) => acc + v);
+        }
+
+        
         public static IEnumerable<IEnumerable<T>> Transpose<T>(this IEnumerable<IEnumerable<T>> source)
         {
             return source.ToLists().Transpose();
