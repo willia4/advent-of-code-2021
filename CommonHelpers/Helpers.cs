@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Immutable;
+using System.Linq;
 
 namespace CommonHelpers
 {
@@ -24,6 +25,11 @@ namespace CommonHelpers
             return s.Trim();
         }
 
+        public static string ToUpper(string s)
+        {
+            return s.ToUpperInvariant();
+        }
+
         public static bool NotEmpty(string s)
         {
             return !string.IsNullOrWhiteSpace(s);
@@ -44,6 +50,17 @@ namespace CommonHelpers
             {
                 target[k] = source[k];
             }
+        }
+
+        public static ImmutableList<T> MakeImmutableList<T>(IEnumerable<T> source)
+        {
+            var r = ImmutableList<T>.Empty;
+            if (source != null)
+            {
+                r = r.AddRange(source);
+            }
+
+            return r;
         }
     }
 }

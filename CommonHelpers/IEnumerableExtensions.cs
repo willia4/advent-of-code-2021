@@ -27,7 +27,7 @@ namespace CommonHelpers
             return matrix.Select(row => row.Select(transform));
         }
 
-        public static string MatrixToString<T>(this IEnumerable<IEnumerable<T>> matrix, string spacer = "  ", Func<T, string>? customToString = null)
+        public static string MatrixToString<T>(this IEnumerable<IEnumerable<T>> matrix, string spacer = "  ", Func<T, string> customToString = null)
         {
             var stringMatrix = matrix.SelectMatrix((o) => customToString != null 
                                                                                 ? customToString(o)

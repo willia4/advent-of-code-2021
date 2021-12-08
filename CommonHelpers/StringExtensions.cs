@@ -8,5 +8,10 @@ namespace CommonHelpers
         {
             return s.Split("\n");
         }
+
+        public static IEnumerable<string> Strings(this string s)
+        {
+            return s.Select((_, i) => s.Substring(i, 1));
+        }
     }
 }
