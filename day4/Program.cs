@@ -7,34 +7,7 @@ using CommonHelpers;
 
 IEnumerable<IEnumerable<string>> ChunkStringByEmptyLines(IEnumerable<string> lines)
 {
-    // get to the first empty line
-    lines = lines.SkipWhile(string.IsNullOrWhiteSpace);
-
-    var chunks = new List<List<string>>();
-    var currentChunk = new List<string>();
-
-    foreach (var line in lines)
-    {
-        if (string.IsNullOrWhiteSpace(line))
-        {
-            if (currentChunk.Any())
-            {
-                chunks.Add(currentChunk);
-            }
-
-            currentChunk = new List<string>();
-        }
-        else
-        {
-            currentChunk.Add(line);            
-        }
-    }
-
-    if (currentChunk.Any())
-    {
-        chunks.Add(currentChunk);
-    }
-
+    var chunks = lines.ChunkBySeparator(Helpers.IsEmpty);
     return chunks;
 }
 

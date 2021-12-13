@@ -35,6 +35,11 @@ namespace CommonHelpers
             return !string.IsNullOrWhiteSpace(s);
         }
 
+        public static bool IsEmpty(string s)
+        {
+            return string.IsNullOrWhiteSpace(s);
+        }
+
         // for any keys in a dictionary, reset the values for those keys to their default value. Does not remove any keys. 
         public static void ClearDictionaryValuesInPlace<K, V>(Dictionary<K, V> dictionary, V defaultValue = default)
         {
@@ -62,5 +67,6 @@ namespace CommonHelpers
 
             return r;
         }
+
     }
 }

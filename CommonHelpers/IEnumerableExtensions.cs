@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace CommonHelpers
@@ -52,6 +53,40 @@ namespace CommonHelpers
                 sb.AppendLine();
             }
             return sb.ToString();
+        }
+
+        public static IEnumerable<IEnumerable<T>> ChunkBySeparator<T>(this IEnumerable<T> items, Func<T, bool> isSep)
+        {
+            isSep ??= (item => false);
+            var currentChunk = Enumerable.Empty<T>();
+
+            foreach (var item in items)
+            {
+                if (isSep(item))
+                {
+                    if (currentChunk.Any())
+                    {
+                        yield return currentChunk;
+                        currentChunk = Enumerable.Empty<T>();
+                    }
+                }
+                else
+                {
+                    currentChunk = currentChunk.Append(item);
+                }
+            }
+
+            if (currentChunk.Any())
+            {
+                yield return currentChunk;
+            }
+        }
+
+        public static IList<IList<T>> ToImmutableMatrix<T>(this IEnumerable<IEnumerable<T>> source)
+        {
+            return ImmutableArray<IList<T>>.Empty.AddRange(
+                source.Select(row => ImmutableArray<T>.Empty.AddRange(row) as IList<T>
+            ));
         }
     }
 }
