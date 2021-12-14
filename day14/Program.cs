@@ -2,17 +2,18 @@
 using CommonHelpers;
 using Microsoft.VisualBasic;
 
-uint ToLookup(byte b1, byte b2) => (((uint)b1) << 8) + b2;
+uint ToLookup(char b1, char b2) => (((uint)b1) << 8) + b2;
     
-(LinkedList<byte> initialForm, Dictionary<uint, byte> rules) ReadInput(string path)
+(char[] initialForm, Dictionary<uint, char> rules) ReadInput(string path)
 {
-    byte ToByte(string s)
+    char ToByte(string s)
     {
-        return System.Text.Encoding.UTF8.GetBytes(s)[0];
+//        return System.Text.Encoding.UTF8.GetBytes(s)[0];
+        return s.ToCharArray()[0];
     }
 
     var chunks = System.IO.File.ReadAllLines(path).ChunkBySeparator(Helpers.IsEmpty).ToArray();
-    var initialForm = new LinkedList<byte>(chunks[0].First().Strings().Select(ToByte));
+    var initialForm = (chunks[0].First().Strings().Select(ToByte)).ToArray();
 
     var rules = chunks[1].Select(line =>
     {
@@ -32,42 +33,47 @@ uint ToLookup(byte b1, byte b2) => (((uint)b1) << 8) + b2;
     return (initialForm, rules);
 }
 
-LinkedList<byte> ProcessStep(LinkedList<byte> s, Dictionary<uint, byte> rules)
+char[] ProcessStep(char[] s, Dictionary<uint, char> rules)
 {
-    var pairFirst = s.First!;
-    var pairSecond = pairFirst.Next;
-    
-    while (pairSecond != null)
+    char[] output = new char[s.Length * 2];
+
+    var j = 0;
+    output[j++] = s[0];
+
+    for (var i = 0; i < s.Length - 1; i++)
     {
-        var lookup = ToLookup(pairFirst.Value, pairSecond.Value);
+        var pairFirst = s[i];
+        var pairSecond = s[i + 1];
+        var lookup = ToLookup(pairFirst, pairSecond);
         if (rules.ContainsKey(lookup))
         {
-            s.AddAfter(pairFirst, rules[lookup]);
+            output[j++] = rules[lookup];
         }
 
-        pairFirst = pairSecond;
-        pairSecond = pairSecond.Next;
+        output[j++] = pairSecond;
     }
 
-    return s;
+    char[] realOutput = new char[j];
+    Array.Copy(output, realOutput, j);
+    return realOutput;
 }
 
-(long processedLength, (long count, byte value) mostCommon, (long count, byte value) leastCommon) RunProgram(string path, int stepCount)
+(long processedLength, (long count, char value) mostCommon, (long count, char value) leastCommon) RunProgram(string path, int stepCount)
 {
     var input = ReadInput(path);
 
     var processed = Enumerable.Range(0, stepCount).Aggregate(input.initialForm, (s, i) => ProcessStep(s, input.rules));
 
-    var frequencyTable = new Dictionary<byte, long>();
+    var frequencyTable = new Dictionary<char, long>();
     foreach (var s in processed)
     {
-        frequencyTable[s] = frequencyTable.GetValueOrDefault(s, 0) + 1;
+        frequencyTable[s] = frequencyTable.GetValueOrDefault(s, '\0') + 1;
     }
 
-    var mostCommon = frequencyTable.Aggregate((count: (long)-1, value: (byte) 0), (acc, kvp) => kvp.Value > acc.count ? (kvp.Value, kvp.Key) : acc);
-    var leastCommon = frequencyTable.Aggregate((count: long.MaxValue, value: (byte) 0), (acc, kvp) => kvp.Value < acc.count ? (kvp.Value, kvp.Key) : acc);
+    var mostCommon = frequencyTable.Aggregate((count: (long)-1, value: (char) '\0'), (acc, kvp) => kvp.Value > acc.count ? (kvp.Value, kvp.Key) : acc);
+    var leastCommon = frequencyTable.Aggregate((count: long.MaxValue, value: (char) '\0'), (acc, kvp) => kvp.Value < acc.count ? (kvp.Value, kvp.Key) : acc);
 
-    return (processed.Count, mostCommon, leastCommon);
+    return (processed.Length, mostCommon, leastCommon);
 }
 
 void Part1(string path)
