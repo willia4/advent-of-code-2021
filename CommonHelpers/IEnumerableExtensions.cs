@@ -82,6 +82,27 @@ namespace CommonHelpers
             }
         }
 
+        public static IEnumerable<IEnumerable<T>> AsSlidingWindow<T>(this IEnumerable<T> items, int chunkSize)
+        {
+            var chunk = new List<T>();
+            
+            foreach (var item in items)
+            {
+                if (chunk.Count == chunkSize)
+                {
+                    yield return chunk.ToImmutableArray();
+                    chunk.RemoveAt(0);
+                }
+
+                chunk.Add(item);
+            }
+
+            if (chunk.Count == chunkSize)
+            {
+                yield return chunk.ToImmutableArray();
+            }
+        }
+        
         public static IList<IList<T>> ToImmutableMatrix<T>(this IEnumerable<IEnumerable<T>> source)
         {
             return ImmutableArray<IList<T>>.Empty.AddRange(
