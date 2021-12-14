@@ -4,7 +4,7 @@ using Microsoft.VisualBasic;
 
 uint ToLookup(char b1, char b2) => (((uint)b1) << 8) + b2;
     
-(char[] initialForm, Dictionary<uint, char> rules) ReadInput(string path)
+(List<char> initialForm, Dictionary<uint, char> rules) ReadInput(string path)
 {
     char ToByte(string s)
     {
@@ -13,7 +13,7 @@ uint ToLookup(char b1, char b2) => (((uint)b1) << 8) + b2;
     }
 
     var chunks = System.IO.File.ReadAllLines(path).ChunkBySeparator(Helpers.IsEmpty).ToArray();
-    var initialForm = (chunks[0].First().Strings().Select(ToByte)).ToArray();
+    var initialForm = (chunks[0].First().Strings().Select(ToByte)).ToList();
 
     var rules = chunks[1].Select(line =>
     {
@@ -33,29 +33,27 @@ uint ToLookup(char b1, char b2) => (((uint)b1) << 8) + b2;
     return (initialForm, rules);
 }
 
-char[] ProcessStep(char[] s, Dictionary<uint, char> rules)
+List<char> ProcessStep(List<char> s, Dictionary<uint, char> rules)
 {
-    char[] output = new char[s.Length * 2];
+    var output = new List<char>(s.Count);
 
     var j = 0;
-    output[j++] = s[0];
+    output.Add(s[0]);
 
-    for (var i = 0; i < s.Length - 1; i++)
+    for (var i = 0; i < s.Count - 1; i++)
     {
         var pairFirst = s[i];
         var pairSecond = s[i + 1];
         var lookup = ToLookup(pairFirst, pairSecond);
         if (rules.ContainsKey(lookup))
         {
-            output[j++] = rules[lookup];
+            output.Add(rules[lookup]);
         }
 
-        output[j++] = pairSecond;
+        output.Add(pairSecond);
     }
 
-    char[] realOutput = new char[j];
-    Array.Copy(output, realOutput, j);
-    return realOutput;
+    return output;
 }
 
 (long processedLength, (long count, char value) mostCommon, (long count, char value) leastCommon) RunProgram(string path, int stepCount)
@@ -73,7 +71,7 @@ char[] ProcessStep(char[] s, Dictionary<uint, char> rules)
     var mostCommon = frequencyTable.Aggregate((count: (long)-1, value: (char) '\0'), (acc, kvp) => kvp.Value > acc.count ? (kvp.Value, kvp.Key) : acc);
     var leastCommon = frequencyTable.Aggregate((count: long.MaxValue, value: (char) '\0'), (acc, kvp) => kvp.Value < acc.count ? (kvp.Value, kvp.Key) : acc);
 
-    return (processed.Length, mostCommon, leastCommon);
+    return (processed.Count, mostCommon, leastCommon);
 }
 
 void Part1(string path)
