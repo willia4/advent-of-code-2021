@@ -1,77 +1,82 @@
 ﻿using System.Text.RegularExpressions;
 using CommonHelpers;
-using Microsoft.VisualBasic;
 
 uint ToLookup(char b1, char b2) => (((uint)b1) << 8) + b2;
     
-(List<char> initialForm, Dictionary<uint, char> rules) ReadInput(string path)
+(Form initialForm, IEnumerable<Rule> rules) ReadInput(string path)
 {
-    char ToByte(string s)
+    StringPair ToStringPair(string s)
     {
-//        return System.Text.Encoding.UTF8.GetBytes(s)[0];
-        return s.ToCharArray()[0];
+        return new StringPair(s.Substring(0, 1), s.Substring(1, 1));
     }
 
     var chunks = System.IO.File.ReadAllLines(path).ChunkBySeparator(Helpers.IsEmpty).ToArray();
-    var initialForm = (chunks[0].First().Strings().Select(ToByte)).ToList();
+    var initialFormPairs = chunks[0].First().Strings().AsSlidingWindow(2).Select(pair => string.Join("", pair));
+    var initialFormCounts = 
+        initialFormPairs
+            .GroupBy(pair => pair)
+            .ToDictionary(
+                pair => ToStringPair(pair.Key), 
+                pair => (long) pair.Count());
 
     var rules = chunks[1].Select(line =>
     {
-        var m = Regex.Match(line, "^(..) -> (.)");
+        var m = Regex.Match(line, "^(.)(.) -> (.)");
         if (!m.Success)
         {
             throw new InvalidOperationException($"Could not parse line {line}");
         }
 
-        var from = ToLookup(ToByte(m.Groups[1].Value.Substring(0, 1)), ToByte(m.Groups[1].Value.Substring(1, 1)))  ;
-        var to = ToByte(m.Groups[2].Value);
+        return new Rule(new StringPair(m.Groups[1].Value, m.Groups[2].Value), m.Groups[3].Value);
+    });
 
-        return (from: from, to: to);
-    }).ToDictionary(t => t.from, t => t.to);
-
-    
-    return (initialForm, rules);
+    var firstFormPair = ToStringPair(initialFormPairs.First());
+    return (new Form(firstFormPair.Left, initialFormCounts), rules);
 }
 
-List<char> ProcessStep(List<char> s, Dictionary<uint, char> rules)
+Form ProcessStep(Form currentForm, IEnumerable<Rule> rules)
 {
-    var output = new List<char>(s.Count);
-
-    var j = 0;
-    output.Add(s[0]);
-
-    for (var i = 0; i < s.Count - 1; i++)
+    var output = currentForm.Counts.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+    
+    foreach (var rule in rules.Where(r => currentForm.Counts.GetValueOrDefault(r.From) > 0))
     {
-        var pairFirst = s[i];
-        var pairSecond = s[i + 1];
-        var lookup = ToLookup(pairFirst, pairSecond);
-        if (rules.ContainsKey(lookup))
-        {
-            output.Add(rules[lookup]);
-        }
+        var pairsInCurrentForm = currentForm.Counts.GetValueOrDefault(rule.From);
+        output[rule.From] = output.GetValueOrDefault(rule.From) - pairsInCurrentForm;
 
-        output.Add(pairSecond);
+        var leftNewPair = new StringPair(rule.From.Left, rule.To);
+        var rightNewPair = new StringPair(rule.To, rule.From.Right);
+        
+        output[leftNewPair] = (output.GetValueOrDefault(leftNewPair, 0) + pairsInCurrentForm);
+        output[rightNewPair] = (output.GetValueOrDefault(rightNewPair, 0) + pairsInCurrentForm);
     }
 
-    return output;
+    return new Form(currentForm.FirstCharacter, output);
 }
 
-(long processedLength, (long count, char value) mostCommon, (long count, char value) leastCommon) RunProgram(string path, int stepCount)
+(long processedLength, (long count, string value) mostCommon, (long count, string value) leastCommon) RunProgram(string path, int stepCount)
 {
     var input = ReadInput(path);
 
     var processed = Enumerable.Range(0, stepCount).Aggregate(input.initialForm, (s, i) => ProcessStep(s, input.rules));
 
-    var frequencyTable = new Dictionary<char, long>();
-    foreach (var s in processed)
+    long processedLength = 0;
+    var frequencyTable = new Dictionary<string, long>();
+    foreach (var s in processed.Counts)
     {
-        frequencyTable[s] = frequencyTable.GetValueOrDefault(s, '\0') + 1;
+        var pair = s.Key;
+        var count = s.Value;
+        
+        frequencyTable[pair.Right] = frequencyTable.GetValueOrDefault(pair.Right, 0) + count;
+
+        processedLength += count;
     }
 
-    var mostCommon = frequencyTable.Aggregate((count: (long)-1, value: (char) '\0'), (acc, kvp) => kvp.Value > acc.count ? (kvp.Value, kvp.Key) : acc);
-    var leastCommon = frequencyTable.Aggregate((count: long.MaxValue, value: (char) '\0'), (acc, kvp) => kvp.Value < acc.count ? (kvp.Value, kvp.Key) : acc);
+    frequencyTable[processed.FirstCharacter] = frequencyTable.GetValueOrDefault(processed.FirstCharacter, 0) + 1;
 
-    return (processed.Count, mostCommon, leastCommon);
+    var mostCommon = frequencyTable.Aggregate((count: (long)-1, value: ""), (acc, kvp) => kvp.Value > acc.count ? (kvp.Value, kvp.Key) : acc);
+    var leastCommon = frequencyTable.Aggregate((count: long.MaxValue, value: ""), (acc, kvp) => kvp.Value < acc.count ? (kvp.Value, kvp.Key) : acc);
+
+    return (processedLength + 1, mostCommon, leastCommon);
 }
 
 void Part1(string path)
@@ -112,3 +117,8 @@ Part1("test_input.txt");
 Part1("input.txt");
 
 Part2("test_input.txt");
+Part2("input.txt");
+
+public record Rule (StringPair From, string To);
+public record StringPair(string Left, string Right);
+public record Form(string FirstCharacter, Dictionary<StringPair, long> Counts);
