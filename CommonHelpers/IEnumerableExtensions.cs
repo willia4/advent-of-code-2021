@@ -25,14 +25,34 @@ namespace CommonHelpers
 
         public static IEnumerable<IEnumerable<U>> SelectMatrix<T, U>(this IEnumerable<IEnumerable<T>> matrix, Func<T, U> transform)
         {
-            return matrix.Select(row => row.Select(transform));
+            return matrix.Select((row) => row.Select(transform));
+        }
+        
+        public static IEnumerable<IEnumerable<U>> SelectMatrix<T, U>(this IEnumerable<IEnumerable<T>> matrix, Func<int, int, T, U> transform)
+        {
+            return matrix.Select((row, y) => row.Select((value, x) => transform(x, y, value)));
         }
 
         public static string MatrixToString<T>(this IEnumerable<IEnumerable<T>> matrix, string spacer = "  ", Func<T, string> customToString = null)
         {
-            var stringMatrix = matrix.SelectMatrix((o) => customToString != null 
-                                                                                ? customToString(o)
-                                                                                : o?.ToString() ?? "<null>");
+            Func<int, int, T, string> transformer = (x, y, v) =>
+            {
+                if (customToString == null)
+                {
+                    return v?.ToString() ?? "<null>";
+                }
+
+                return customToString(v);
+            };
+
+            return matrix.MatrixToString(spacer, transformer);
+        }
+        
+        public static string MatrixToString<T>(this IEnumerable<IEnumerable<T>> matrix, string spacer, Func<int, int, T, string> customToString)
+        {
+            var stringMatrix = matrix.SelectMatrix((x, y, v) => customToString != null 
+                                                                                ? customToString(x, y, v)
+                                                                                : v?.ToString() ?? "<null>");
             var stringLengths = stringMatrix.SelectMatrix(s => s.Length);
 
             var maxLength = stringLengths.Select(row => row.Max()).Max();

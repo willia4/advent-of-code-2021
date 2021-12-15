@@ -68,5 +68,6 @@ namespace CommonHelpers
             return r;
         }
 
+        public static T Identity<T>(T t) => t;
     }
 }
