@@ -1,5 +1,6 @@
 ﻿using CommonHelpers;
 using System.Collections.Immutable;
+using System.Security;
 
 int[][] ReadInput(string path)
 {
@@ -88,57 +89,65 @@ IEnumerable<(int x, int y)> Neighbors<T>(T[][] m, (int x, int y) pt)
 
 IList<(int x, int y)> FindPath(int[][] m)
 {
-    var allPoints = Enumerable.Range(0, m.Length).SelectMany(y => Enumerable.Range(0, m[0].Length).Select(x => (x, y))).ToArray();
-
-    var visited = new HashSet<(int x, int y)>();
-    var distances = Enumerable.Range(0, m.Length).Select(_ => Enumerable.Range(0, m[0].Length).Select(_ => int.MaxValue).ToArray()).ToArray();
-    distances[0][0] = m[0][0];
-
-    IEnumerable<(int x, int y)> UnvisitedNodes()
-    {
-        return allPoints.Where(pt => !visited.Contains(pt));
-    }
-
-    IEnumerable<(int x, int y, int d)> NodeDistances(IEnumerable<(int x, int y)> nodes)
-    {
-        return nodes.Select(n => (n.x, n.y, distances[n.y][n.x])).ToArray();
-    }
-    
-    IEnumerable<(int x, int y)> UnvisitedNeighbors((int x, int y) pt)
-    {
-        return Neighbors(m, pt).Where(pt => !visited.Contains(pt));
-    }
-
     (int x, int y) startNode = (0, 0);
     (int x, int y) endNode = (m[0].Length - 1, m.Length - 1);
 
-    var currentNode = startNode;
-    while (currentNode != endNode)
+    var openSet = new PriorityQueue<(int x, int y), int>();
+    var openSetHash = new HashSet<(int x, int y)>();
+
+    var cameFrom = new Dictionary<(int x, int y), (int x, int y)>();
+    var gScore = new Dictionary<(int x, int y), int>();
+
+    foreach (var p in m.AllCoordinates())
     {
-        var nodes = UnvisitedNeighbors(currentNode);
-        var currentNodeDistance = distances[currentNode.y][currentNode.x];
-        foreach (var n in nodes)
+        gScore[p] = Int32.MaxValue;
+    }
+
+    openSet.Enqueue(startNode, m[startNode.y][startNode.x]);
+    openSetHash.Add(startNode);
+
+    gScore[startNode] = m[startNode.y][startNode.x];
+
+    IList<(int x, int y)> ReconstructPath((int x, int y) current)
+    {
+        var path = new List<(int x, int y)> { current };
+
+        while (cameFrom.ContainsKey(current))
         {
-            distances[n.y][n.x] = Math.Min(distances[n.y][n.x], currentNodeDistance + m[n.y][n.x]);
+            current = cameFrom[current];
+            path.Add(current);
         }
 
-        visited.Add(currentNode);
-        var next = NodeDistances(UnvisitedNodes()).OrderBy(n => n.d).First();
-        currentNode = (next.x, next.y);
+        path.Reverse();
+        return path;
     }
-
-    var reversePath = new List<(int x, int y)>();
-    currentNode = endNode;
-    while (currentNode != startNode)
+    
+    while (openSet.Count > 0)
     {
-        reversePath.Add(currentNode);
-        var neighbors = NodeDistances(Neighbors(distances, currentNode));
-        currentNode = neighbors.OrderBy(n => n.d).Select(n => (n.x, n.y)).First();
+        var current = openSet.Dequeue();
+        if (current == endNode)
+        {
+            return ReconstructPath(current);
+        }
+
+        foreach (var neighbor in Neighbors(m, current))
+        {
+            var tentative_gScore = gScore[current] + m[neighbor.y][neighbor.x];
+            if (tentative_gScore < gScore[neighbor])
+            {
+                cameFrom[neighbor] = current;
+                gScore[neighbor] = tentative_gScore;
+
+                if (!openSetHash.Contains(neighbor))
+                {
+                    openSetHash.Add(neighbor);
+                    openSet.Enqueue(neighbor, gScore[neighbor]);
+                }
+            }
+        }
     }
 
-    reversePath.Add(startNode);
-    reversePath.Reverse();
-    return reversePath;
+    throw new InvalidOperationException("Could not construct path");
 }
 
 void PrintMatrixAndPath(int[][] matrix, IList<(int x, int y)> path)
@@ -201,8 +210,8 @@ void Part2(string path)
     Console.WriteLine($" │ Total Risk: {totalRisk}");
     Console.WriteLine($" └────────────");
 }
-// Part1("test_input.txt");
-// Part1("input.txt");
+Part1("test_input.txt");
+Part1("input.txt");
 
 Part2("test_input.txt");
 Part2("input.txt");

@@ -23,6 +23,14 @@ namespace CommonHelpers
             return source.Select(s => s.ToList()).ToList();
         }
 
+        public static (int x, int y)[] AllCoordinates<T>(this IEnumerable<IEnumerable<T>> matrix)
+        {
+            if (!matrix.Any() || !matrix.First().Any()) { return Array.Empty<(int x, int y)>(); }
+
+            var width = matrix.First().Count();
+            return Enumerable.Range(0, matrix.Count()).SelectMany(y => Enumerable.Range(0, width).Select(x => (x, y))).ToArray();
+        }
+        
         public static IEnumerable<IEnumerable<U>> SelectMatrix<T, U>(this IEnumerable<IEnumerable<T>> matrix, Func<T, U> transform)
         {
             return matrix.Select((row) => row.Select(transform));
