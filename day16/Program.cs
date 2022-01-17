@@ -6,8 +6,6 @@ const int PacketVersionLength = 3;
 const int PacketTypeIdLength = 3;
 const int PacketHeaderLength = PacketVersionLength + PacketTypeIdLength;
 
-int AlignToFour(int i) => ((int)Math.Ceiling(((double)i) / 4.0)) * 4;
-
 IEnumerable<byte> HexStringToBits(string s)
 {
     static IEnumerable<byte> FourBits(int v)
@@ -44,25 +42,25 @@ IEnumerable<byte> HexStringToBits(string s)
     return (HexStringToBits(s).ToList(), s);
 }
 
-int BitsToInt(IList<byte> bits, int length = -1)
+ulong BitsToInt(IList<byte> bits, int length = -1)
 {
     if (length == -1)
     {
         length = bits.Count;
     }
 
-    int r = 0;
+    ulong r = 0;
     var reverseB = bits.Take(length).Reverse().ToList();
     for (int i = 0; i < reverseB.Count; i++)
     {
-        r = r + (reverseB[i] << i);
+        r = r + ((ulong) reverseB[i] << i);
     }
 
     return r;
 }
 
-int PacketVersion(IList<byte> packet) => BitsToInt(packet, PacketVersionLength);
-int PacketType(IList<byte> packet) => BitsToInt(packet.Skip(PacketVersionLength).ToList(), PacketTypeIdLength);
+ulong PacketVersion(IList<byte> packet) => BitsToInt(packet, PacketVersionLength);
+ulong PacketType(IList<byte> packet) => BitsToInt(packet.Skip(PacketVersionLength).ToList(), PacketTypeIdLength);
 
 bool IsLiteralPacket(IList<byte> packet) => PacketType(packet) == 4;
 bool IsOperatorPacket(IList<byte> packet) => !IsLiteralPacket(packet);
@@ -104,51 +102,8 @@ int LiteralPacketLength(IEnumerable<byte> packet)
     }
 
     c += 5;
-
-    // c will be padded to a 4-bit boundary so we need to do the same
-    //return AlignToFour(c);
     return c;
 }
-
-//
-// int OperatorPacketLength(IEnumerable<byte> packet)
-// {
-//     int packetLength = 0; 
-//     var data = packet.Skip(PacketHeaderLength);
-//     
-//     var lengthType = data.First();
-//     data = data.Skip(1); // skip the length type
-//     if (lengthType == 0)
-//     {
-//         var length = data.Take(15);
-//         packetLength = BitsToInt(length, length.Count()) + 15;
-//     }
-//     else
-//     {
-//         var numberOfSubPackets = BitsToInt(data.Take(11), 11);
-//         data = data.Skip(11);
-//         
-//         for (var i = 0; i < numberOfSubPackets; i++)
-//         {
-//             
-//         }
-//     }
-//
-//     return AlignToFour(packetLength + PacketHeaderLength + 1);
-// }
-//
-// // returns the length of the first packet in bits, including the length of any subpackets 
-// int PacketLength(IEnumerable<byte> packet)
-// {
-//     if (IsLiteralPacket(packet))
-//     {
-//         return LiteralPacketLength(packet);
-//     }
-//     else
-//     {
-//         return OperatorPacketLength(packet);
-//     }
-// }
 
 OperatorPacketLengthType DecodeOperatorPacketLengthType(IList<byte> bits)
 {
@@ -176,7 +131,7 @@ OperatorPacketLengthType DecodeOperatorPacketLengthType(IList<byte> bits)
     var totalConsumed = parentHeaderLength + lengthHeaderLength; 
 
     var subPackets = new List<Packet>();
-    var subPacketBits = parentBits.Skip(parentHeaderLength + lengthHeaderLength).Take(lengthBits).ToList();
+    var subPacketBits = parentBits.Skip(parentHeaderLength + lengthHeaderLength).Take((int)lengthBits).ToList();
     while (subPacketBits.Any())
     {
         var (nextPacket, nextLength) = DecodePacket(subPacketBits);
@@ -206,7 +161,7 @@ OperatorPacketLengthType DecodeOperatorPacketLengthType(IList<byte> bits)
     var subPackets = new List<Packet>();
     var subPacketBits = parentBits.Skip(parentHeaderLength + lengthHeaderLength).ToList();
     
-    for (var i = 0; i < subPacketCount; i++)
+    for (ulong i = 0; i < subPacketCount; i++)
     {
         var (nextPacket, nextLength) = DecodePacket(subPacketBits);
         subPackets.Add(nextPacket);
@@ -243,7 +198,7 @@ OperatorPacketLengthType DecodeOperatorPacketLengthType(IList<byte> bits)
     }
 }
 
-int VersionSum(Packet packet)
+ulong VersionSum(Packet packet)
 {
     if (packet is LiteralValuePacket v)
     {
@@ -259,7 +214,7 @@ int VersionSum(Packet packet)
     }
 }
 
-long PacketValue(Packet packet)
+ulong PacketValue(Packet packet)
 {
     if (packet is LiteralValuePacket v)
     {
@@ -273,9 +228,9 @@ long PacketValue(Packet packet)
             1 => o.SubPackets.Select(PacketValue).Aggregate((acc, n) => acc * n), //Product
             2 => o.SubPackets.Select(PacketValue).Min(), //Minimum
             3 => o.SubPackets.Select(PacketValue).Max() , //Maximum
-            5 => PacketValue(o.SubPackets[0]) > PacketValue(o.SubPackets[1]) ? 1 : 0, //Greater Than
-            6 => PacketValue(o.SubPackets[0]) < PacketValue(o.SubPackets[1]) ? 1 : 0, //Less Than
-            7 => PacketValue(o.SubPackets[0]) == PacketValue(o.SubPackets[1]) ? 1 : 0, //Equals To
+            5 => PacketValue(o.SubPackets[0]) > PacketValue(o.SubPackets[1]) ? (ulong) 1 : 0, //Greater Than
+            6 => PacketValue(o.SubPackets[0]) < PacketValue(o.SubPackets[1]) ? (ulong) 1 : 0, //Less Than
+            7 => PacketValue(o.SubPackets[0]) == PacketValue(o.SubPackets[1]) ? (ulong) 1 : 0, //Equals To
             _ => throw new InvalidOperationException($"Unexpected packet type for packet {packet}")
         };
     }
@@ -327,11 +282,6 @@ void Part2(string hexString)
     Console.WriteLine();
 }
 
-IList<byte> packetBits = Array.Empty<byte>();
-Packet decoded = null;
-int decodedLength = 0;
-string hex = "";
-
 // Part1("test_input_val.txt");
 //
 // Part1("test_input_op1.txt");
@@ -355,20 +305,20 @@ Part1("input.txt");
 Part2(System.IO.File.ReadAllText("input.txt").Trim());
 public abstract class Packet
 {
-    public int Type { get; protected set; } = 0;
-    public int Version { get; protected set; } = 0;
+    public ulong Type { get; protected set; } = 0;
+    public ulong Version { get; protected set; } = 0;
 }
 
 public class LiteralValuePacket : Packet
 {
-    public LiteralValuePacket(int version, long value)
+    public LiteralValuePacket(ulong version, ulong value)
     {
         Type = 4;
         Version = version;
         Value = value;
     }
 
-    public long Value { get; protected set; }
+    public ulong Value { get; protected set; }
 
     public override string ToString()
     {
@@ -378,7 +328,7 @@ public class LiteralValuePacket : Packet
 
 public class OperatorPacket : Packet
 {
-    public OperatorPacket(int version, int type, IList<Packet> subPackets)
+    public OperatorPacket(ulong version, ulong type, IList<Packet> subPackets)
     {
         Type = type;
         Version = version;
@@ -395,15 +345,6 @@ public class OperatorPacket : Packet
         sb.Append(String.Join(" ", SubPackets.Select(s => s.ToString())));
         sb.Append("]>");
         return sb.ToString();
-    }
-}
-
-public class UnknownPacket : Packet
-{
-    public UnknownPacket(int type, int version)
-    {
-        Type = type;
-        Version = version;
     }
 }
 
